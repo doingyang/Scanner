@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/btn_czxing"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:text="czxing"
+        android:textAllCaps="false" />
+
+    <Button
+        android:id="@+id/btn_hms_default"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:text="hms scan kit default"
+        android:textAllCaps="false" />
+
+    <Button
+        android:id="@+id/btn_hms_custom"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:text="hms scan kit custom"
+        android:textAllCaps="false" />
+
+    <TextView
+        android:id="@+id/tv_scan_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:minHeight="45dp"
+        android:text="扫码结果：" />
+
+    <ImageView
+        android:id="@+id/iv_code"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_gravity="center_horizontal"
+        android:scaleType="fitXY"
+        tools:ignore="ContentDescription" />
+</LinearLayout>

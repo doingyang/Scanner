@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hms_color_primary">#008577</color>
+    <color name="hms_color_primaryDark">#00574B</color>
+    <color name="hms_color_accent">#D81B60</color>
+
+    <color name="hms_black">#000000</color>
+
+    <!-- 扫描界面蒙层颜色 -->
+    <color name="hms_scan_mask">#66000000</color>
+
+    <!-- 扫描框角边颜色 -->
+    <color name="hms_scan_border">#C5C3C3</color>
+    <color name="hms_scan_corner">#569FFF</color>
+
+    <!-- 扫描线渐变颜色 -->
+    <color name="hms_scan_1">#00000000</color>
+    <color name="hms_scan_2">#6BABFF</color>
+    <color name="hms_scan_3">#2F89FE</color>
+
+    <!-- 文字颜色 -->
+    <color name="hms_text_normal">#FFFFFF</color>
+    <color name="hms_text_big">#569FFF</color>
+
+    <color name="qqscan">#68b6fc</color>
+    <color name="black_tran30">#4D000000</color>
+</resources>

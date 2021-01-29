@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="module_name">hms</string>
+
+    <string name="back">back</string>
+    <string name="hms_scan_title">QR/Bar code</string>
+    <string name="album">album</string>
+
+    <string name="hms_click_open_flash_light">Tap to turn light on</string>
+    <string name="hms_click_close_flash_light">Tap to turn light off</string>
+    <string name="hms_scan_notice">The QR code / barcode can be automatically scanned by placing it in the box</string>
+
+</resources>

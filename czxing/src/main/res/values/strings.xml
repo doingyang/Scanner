@@ -1,0 +1,12 @@
+<resources>
+    <string name="module_name">czxing</string>
+
+    <string name="back">返回</string>
+    <string name="czxing_scan_title">二维码/条形码</string>
+    <string name="album">相册</string>
+
+    <string name="czxing_click_open_flash_light">轻触照亮</string>
+    <string name="czxing_click_close_flash_light">轻触关闭</string>
+    <string name="czxing_scan_notice">将二维码/条形码放入框内，即可自动扫描</string>
+
+</resources>

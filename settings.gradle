@@ -1,0 +1,4 @@
+include ':app',
+        ':czxing',
+        ':hmsscan',
+rootProject.name = "Scanner"
