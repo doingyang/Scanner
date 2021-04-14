@@ -7,7 +7,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Shader;
@@ -17,6 +19,7 @@ import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
 import java.util.List;
@@ -99,6 +102,25 @@ public class ScanBoxView extends View {
     private String mFlashLightOffText;
     private String mScanNoticeText;
 
+    // 变换矩阵，用来处理扫描的上下扫描动画效果
+    private Matrix mScanGridMatrix = new Matrix();
+    // 值动画，用来变换矩阵操作
+    private ValueAnimator mScanGridValueAnimator;
+    // 值动画的时长
+    private int mScanGridAnimatorDuration = 1800;
+    // 网格画笔
+    private Paint mScanGridPaint;
+    // 网格path
+    private Path mScanGridPath;
+    // 网格画笔的shader
+    private LinearGradient mScanGridShader;
+    // 网格扫描线的线宽，单位px
+    private float mScanGridLineWidth = 2;
+    // 网格扫描线密度，值越大越密集
+    private int mScanGridDensity = 40;
+    // 网格扫描线颜色
+    private int mScanGridColor;
+
     public ScanBoxView(Context context) {
         this(context, null);
     }
@@ -120,6 +142,10 @@ public class ScanBoxView extends View {
         mTxtPaint = new Paint();
         mTxtPaint.setAntiAlias(true);
 
+        mScanGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mScanGridPaint.setStyle(Paint.Style.STROKE);
+        mScanGridPaint.setStrokeWidth(mScanGridLineWidth);
+
         Resources resources = getResources();
 
         mMaskColor = resources.getColor(R.color.czxing_scan_mask);
@@ -129,6 +155,7 @@ public class ScanBoxView extends View {
         mScanLineColor1 = resources.getColor(R.color.czxing_scan_1);
         mScanLineColor2 = resources.getColor(R.color.czxing_scan_2);
         mScanLineColor3 = resources.getColor(R.color.czxing_scan_3);
+        mScanGridColor = resources.getColor(R.color.czxing_scan_grid);
 
         mTopOffset = -BarCodeUtil.dp2px(context, 10);
         mBoxSizeOffset = BarCodeUtil.dp2px(context, 40);
@@ -138,7 +165,7 @@ public class ScanBoxView extends View {
         mBorderStrokeWidth = BarCodeUtil.dp2px(context, 0.5f);
 
         mCornerColor = resources.getColor(R.color.czxing_scan_corner);
-        mCornerLength = BarCodeUtil.dp2px(context, 17);
+        mCornerLength = BarCodeUtil.dp2px(context, 20);
         mCornerSize = BarCodeUtil.dp2px(context, 3);
         mHalfCornerSize = 1.0f * mCornerSize / 2;
 
@@ -173,21 +200,81 @@ public class ScanBoxView extends View {
         // 画边框线
         drawBorderLine(canvas);
 
-        // 画四个直角的线
-        /*drawCornerLine(canvas);*/
-        drawRoundCorner(canvas);
-
         // 画扫描线
-        drawScanLine(canvas);
+        /*drawScanLine(canvas);*/
+        // 移动扫描线的位置
+        /*moveScanLine();*/
+
+        // 画网格扫描线
+        drawScanGrid(canvas);
+
+        // 画四个直角的线
+        drawCornerLine(canvas);
+        // 画四个圆角直角的线
+        /*drawRoundCorner(canvas);*/
 
         // 画提示文本
         drawTipText(canvas);
 
-        // 移动扫描线的位置
-        moveScanLine();
-
         // 画对识别到二维码的区域
-//        drawFocusRect(0, 0, 0, 0);
+        /*drawFocusRect(0, 0, 0, 0);*/
+    }
+
+    private void drawScanGrid(Canvas canvas) {
+        if (mScanGridPath == null) {
+            mScanGridPath = new Path();
+            float wUnit = mFramingRect.width() / (mScanGridDensity + 0f);
+            float hUnit = mFramingRect.height() / (mScanGridDensity + 0f);
+            for (int i = 0; i <= mScanGridDensity; i++) {
+                mScanGridPath.moveTo(mFramingRect.left + i * wUnit, mFramingRect.top);
+                mScanGridPath.lineTo(mFramingRect.left + i * wUnit, mFramingRect.bottom);
+            }
+            for (int i = 0; i <= mScanGridDensity; i++) {
+                mScanGridPath.moveTo(mFramingRect.left, mFramingRect.top + i * hUnit);
+                mScanGridPath.lineTo(mFramingRect.right, mFramingRect.top + i * hUnit);
+            }
+        }
+        if (mScanGridShader == null) {
+            mScanGridShader = new LinearGradient(0, mFramingRect.top, 0, mFramingRect.bottom + 0.01f * mFramingRect.height(), new int[]{Color.TRANSPARENT, Color.TRANSPARENT, mScanGridColor, Color.TRANSPARENT}, new float[]{0, 0.5f, 0.99f, 1f}, LinearGradient.TileMode.CLAMP);
+            mScanGridShader.setLocalMatrix(mScanGridMatrix);
+            mScanGridPaint.setShader(mScanGridShader);
+        }
+        canvas.drawPath(mScanGridPath, mScanGridPaint);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        moveScanGrid();
+    }
+
+    public void moveScanGrid() {
+        mScanGridValueAnimator = new ValueAnimator();
+        mScanGridValueAnimator.setFloatValues(-mFramingRect.height(), 0);
+        mScanGridValueAnimator.setDuration(mScanGridAnimatorDuration);
+        mScanGridValueAnimator.setInterpolator(new DecelerateInterpolator());
+        mScanGridValueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        mScanGridValueAnimator.setRepeatMode(ValueAnimator.RESTART);
+        mScanGridValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                if (mScanGridMatrix != null && mScanGridShader != null) {
+                    float animatedValue = (float) animation.getAnimatedValue();
+                    mScanGridMatrix.setTranslate(0, animatedValue);
+                    mScanGridShader.setLocalMatrix(mScanGridMatrix);
+                    invalidate();
+                }
+            }
+        });
+        mScanGridValueAnimator.start();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mScanGridValueAnimator != null && mScanGridValueAnimator.isRunning()) {
+            mScanGridValueAnimator.cancel();
+        }
+        super.onDetachedFromWindow();
     }
 
     @Override
@@ -436,10 +523,10 @@ public class ScanBoxView extends View {
                 drawFlashLight(canvas);
             }
         }
-//        canvas.drawText(mScanNoticeText,
-//                mFramingRect.left + (mBoxSize >> 1),
-//                mFramingRect.bottom + mTextSize * 2,
-//                mTxtPaint);
+        /*canvas.drawText(mScanNoticeText,
+                mFramingRect.left + (mBoxSize >> 1),
+                mFramingRect.bottom + mTextSize * 2,
+                mTxtPaint);*/
 
         // 替换绘制方式，处理换行问题
         TextPaint textPaint = new TextPaint();
@@ -521,14 +608,11 @@ public class ScanBoxView extends View {
         if (mFocusRect == null) {
             mFocusRect = new Rect(left, top, right, bottom);
         } else if (right != 0 && bottom != 0) {
-            // 会比认为的高度高一点 大概 400px，这点还需改进
+            // 会比认为的高度高一点 大概 400px
             mFocusRect.left = left;
             mFocusRect.top = top;
             mFocusRect.right = right;
             mFocusRect.bottom = bottom;
-
-            BarCodeUtil.d("Focus location : left = " + left + " top = " + top +
-                    " right = " + right + " bottom = " + bottom);
         }
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setColor(mBorderColor);
@@ -547,12 +631,8 @@ public class ScanBoxView extends View {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
                     mScanLinePosition = (float) animation.getAnimatedValue();
-                    // 这里如果用postInvalidate会导致所在Activity的onStop和onDestroy方法阻塞，感谢lhhseraph的反馈
+                    // 这里如果用postInvalidate会导致所在Activity的onStop和onDestroy方法阻塞
                     postInvalidateOnAnimation();
-//                    postInvalidateOnAnimation(mBoxLeft,
-//                            ((int) (mBoxTop + mScanLinePosition - 10)),
-//                            mBoxLeft + mBoxWidth,
-//                            ((int) (mBoxTop + mScanLinePosition + SCAN_LINE_HEIGHT + 10)));
                 }
             });
         } else {
@@ -562,16 +642,13 @@ public class ScanBoxView extends View {
                 public void onAnimationUpdate(ValueAnimator animation) {
                     mScanLinePosition = (float) animation.getAnimatedValue();
                     postInvalidateOnAnimation();
-//                    postInvalidateOnAnimation((int) (mBoxLeft + mScanLinePosition - 10),
-//                            mBoxTop,
-//                            (int) (mBoxLeft + mScanLinePosition + SCAN_LINE_HEIGHT + 10),
-//                            mBoxTop + mBoxHeight);
                 }
             });
         }
         mScanLineAnimator.setDuration(2500);
         mScanLineAnimator.setInterpolator(new LinearInterpolator());
         mScanLineAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        mScanLineAnimator.setRepeatMode(ValueAnimator.REVERSE);
         mScanLineAnimator.start();
     }
 
@@ -669,7 +746,6 @@ public class ScanBoxView extends View {
         }
         this.mBoxHeight = height;
         this.mBoxWidth = width;
-        BarCodeUtil.d("border size: height = " + height + " width = " + width);
     }
 
     /**
@@ -795,17 +871,26 @@ public class ScanBoxView extends View {
         if (mScanLineAnimator != null && !mScanLineAnimator.isRunning()) {
             mScanLineAnimator.start();
         }
+        if (mScanGridValueAnimator != null && !mScanGridValueAnimator.isRunning()) {
+            mScanGridValueAnimator.start();
+        }
     }
 
     public void stopAnim() {
         if (mScanLineAnimator != null && mScanLineAnimator.isRunning()) {
             mScanLineAnimator.cancel();
         }
+        if (mScanGridValueAnimator != null && mScanGridValueAnimator.isRunning()) {
+            mScanGridValueAnimator.cancel();
+        }
     }
 
     public void onDestroy() {
         if (mScanLineAnimator != null) {
             mScanLineAnimator.removeAllUpdateListeners();
+        }
+        if (mScanGridValueAnimator != null) {
+            mScanGridValueAnimator.removeAllUpdateListeners();
         }
     }
 

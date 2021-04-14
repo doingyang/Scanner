@@ -17,6 +17,7 @@
     <color name="czxing_scan_1">#00000000</color>
     <color name="czxing_scan_2">#6BABFF</color>
     <color name="czxing_scan_3">#2F89FE</color>
+    <color name="czxing_scan_grid">#D6FFDA</color>
 
     <!-- 文字颜色 -->
     <color name="czxing_text_normal">#FFFFFF</color>
